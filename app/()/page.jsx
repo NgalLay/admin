@@ -30,7 +30,86 @@ function useFirestoreSubcollection(parentCollection, parentId, subcollectionName
   return data;
 }
 
+function getDeviceLocation() {
+  return new Promise((resolve, reject) => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+      }, reject);
+    } else {
+      reject(new Error('Geolocation not supported'));
+    }
+  });
+}
+function isPointInPolygon(point, polygon) {
+  let isInside = false;
+  let minX = polygon[0].latitude,
+    maxX = polygon[0].latitude;
+  let minY = polygon[0].longitude,
+    maxY = polygon[0].longitude;
+
+  for (let i = 1; i < polygon.length; i++) {
+    const p = polygon[i];
+    minX = Math.min(p.latitude, minX);
+    maxX = Math.max(p.latitude, maxX);
+    minY = Math.min(p.longitude, minY);
+    maxY = Math.max(p.longitude, maxY);
+  }
+
+  if (
+    point.latitude < minX ||
+    point.latitude > maxX ||
+    point.longitude < minY ||
+    point.longitude > maxY
+  ) {
+    return false;
+  }
+
+  let i = 0,
+    j = polygon.length - 1;
+  for (i, j; i < polygon.length; j = i++) {
+    if (
+      polygon[i].longitude > point.longitude !==
+        polygon[j].longitude > point.longitude &&
+      point.latitude <
+        ((polygon[j].latitude - polygon[i].latitude) *
+          (point.longitude - polygon[i].longitude)) /
+          (polygon[j].longitude - polygon[i].longitude) +
+          polygon[i].latitude
+    ) {
+      isInside = !isInside;
+    }
+  }
+
+  return isInside;
+}
+
+const specialLocationPolygon = [
+  { latitude: 20.1350924, longitude: 94.9464115 }, // Point 1
+  { latitude:20.1351070, longitude:94.9465080 }, // Point 2
+  { latitude: 20.1350089, longitude: 94.9464276 }, // Point 3
+  { latitude:20.1350253, longitude: 94.9465204 }, // Point 4
+];
+
+
 export default function Home() {
+
+  const [location, setLocation] = useState(null);
+  const [isInsideSpecialLocation, setIsInsideSpecialLocation] = useState(false);
+
+  
+     function checkLocation(itemLocation) {
+     
+        const inside = isPointInPolygon(itemLocation, specialLocationPolygon);
+        return inside;
+      
+    }
+
+ 
+
   const [selectedTab, setSelectedTab] = useState("items"); // State for tabs
   const itemsData = useFirestoreSubcollection("1", "products", "items");
   const anotherData = useFirestoreSubcollection("1", "order", "items");
@@ -146,12 +225,18 @@ export default function Home() {
             <div style={{ marginLeft: "20px" }}>
               {item.orderlist.map((orderItem, index) => (
                 <div key={index} style={{ fontWeight: "normal", marginBottom: "5px" }}>
-                  {index + 1}. {orderItem.name}
+                  {index + 1}. {orderItem.name} {orderItem.price}
                 </div>
               ))}
             </div>
             <div style={{ color: "#555", marginTop: "10px" }}>
               Total Price: {item.totalPrice}
+            </div>
+            <div style={{ color: "#555", marginTop: "10px" }}>
+
+            {checkLocation(item.location) ? "Inside Special Location" : "Outside Special Location"}
+
+
             </div>
           </div>
         ))}
@@ -204,6 +289,20 @@ export default function Home() {
       </div>
 
       {renderContent()}
+      
+      {location ? (
+        <p>
+          Your location: {location.latitude}, {location.longitude}
+        </p>
+      ) : (
+        <p>Getting location...</p>
+      )}
+      {isInsideSpecialLocation ? (
+        <p>You are inside the special location.</p>
+      ) : (
+        <p>You are outside the special location.</p>
+      )}
+      
     </div>
   );
 }
