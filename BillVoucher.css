@@ -1,0 +1,119 @@
+/* Main Color Theme */
+:root {
+    --primary-color: #4CAF50; /* A nice green for headers and accents */
+    --secondary-color: #333;  /* Dark gray for text */
+    --background-color: #f9f9f9; /* Light background */
+    --accent-color: #f1f1f1; /* Light gray for accents and borders */
+  }
+  
+  .bill-voucher {
+    width: 300px;
+    margin: 0 auto;
+    padding: 20px;
+    border: 1px solid var(--accent-color);
+    border-radius: 10px;
+    font-family: Arial, sans-serif;
+    background-color: var(--background-color);
+  }
+  
+  .bill-header {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .bill-header h2 {
+    margin: 0;
+    font-size: 24px;
+    color: var(--primary-color);
+  }
+  
+  .bill-header p {
+    margin: 2px 0;
+    font-size: 12px;
+    color: var(--secondary-color);
+  }
+  
+  .bill-info {
+    margin-bottom: 20px;
+  }
+  
+  .bill-info p {
+    margin: 2px 0;
+    font-size: 14px;
+    color: var(--secondary-color);
+  }
+  
+  .bill-items ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .bill-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: var(--secondary-color);
+  }
+  
+  .bill-total {
+    margin-top: 20px;
+    font-size: 16px;
+    text-align: right;
+  }
+  
+  .bill-total strong {
+    font-size: 18px;
+    color: var(--primary-color);
+  }
+  
+  .bill-footer {
+    margin-top: 30px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--secondary-color);
+  }
+  
+  /* Print Button */
+  .print-button {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin-top: 20px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    text-align: center;
+  }
+  
+  .print-button:hover {
+    background-color: #45a049; /* Slightly darker green on hover */
+  }
+  
+  /* Style adjustments for print */
+  @media print {
+    .print-button {
+      display: none; /* Hide the print button when printing */
+    }
+    
+    .bill-voucher {
+      width: 100%;
+      margin: 0;
+      border: none;
+      padding: 0;
+      background-color: white;
+    }
+    
+    .bill-header h2 {
+      font-size: 20px;
+    }
+    
+    .bill-total strong {
+      font-size: 20px;
+    }
+  }
+  

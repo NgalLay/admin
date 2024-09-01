@@ -1,10 +1,10 @@
 "use client";
 import React, { useState } from "react";
 import { db, storage } from "../firebaseConfig";
-import { collection, addDoc, doc, serverTimestamp  } from "firebase/firestore";
+import { collection, addDoc, doc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
-async function addDataToFireStore(name, price, imageUrl) {
+async function addDataToFireStore(name, price, imageUrl, category, stock) {
   try {
     const parentDocRef = doc(db, "1", "products");
 
@@ -12,6 +12,9 @@ async function addDataToFireStore(name, price, imageUrl) {
       name: name,
       price: price,
       imageUrl: imageUrl,
+      category: category,
+      stock: stock, 
+      count: 0,  
       createdAt: serverTimestamp(),
     });
     console.log("Document written with ID: ", docRef.id);
@@ -25,6 +28,8 @@ async function addDataToFireStore(name, price, imageUrl) {
 const Home = () => {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
+  const [category, setCategory] = useState("Food");
+  const [stock, setStock] = useState("On");  // Default to "On"
   const [image, setImage] = useState(null);
 
   const handleSubmit = async (e) => {
@@ -37,11 +42,12 @@ const Home = () => {
       imageUrl = await getDownloadURL(snapshot.ref);
     }
 
-    const added = await addDataToFireStore(name, price, imageUrl);
+    const added = await addDataToFireStore(name, price, imageUrl, category, stock);
 
     if (added) {
       setName("");
       setPrice("");
+      setCategory("Food");
       setImage(null);
       alert("Data added successfully");
     }
@@ -49,7 +55,6 @@ const Home = () => {
 
   return (
     <div style={styles.container}>
-      <h1 style={styles.heading}>Add Product</h1>
       <form onSubmit={handleSubmit} style={styles.form}>
         <input
           type="text"
@@ -67,6 +72,14 @@ const Home = () => {
           style={styles.input}
           required
         />
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          style={styles.select}
+        >
+          <option value="Food">Food</option>
+          <option value="Drink">Drink</option>
+        </select>
         <input
           type="file"
           onChange={(e) => setImage(e.target.files[0])}
@@ -90,11 +103,6 @@ const styles = {
     backgroundColor: '#f0f0f0',
     fontFamily: 'Arial, sans-serif',
   },
-  heading: {
-    fontSize: '2.5rem',
-    color: '#333',
-    marginBottom: '20px',
-  },
   form: {
     display: 'flex',
     flexDirection: 'column',
@@ -105,6 +113,14 @@ const styles = {
     boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
   },
   input: {
+    width: '300px',
+    padding: '10px',
+    margin: '10px 0',
+    borderRadius: '5px',
+    border: '1px solid #ccc',
+    fontSize: '1rem',
+  },
+  select: {
     width: '300px',
     padding: '10px',
     margin: '10px 0',
