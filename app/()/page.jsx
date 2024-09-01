@@ -380,20 +380,6 @@ export default function Home() {
                 <div style={{ fontWeight: "bold", marginTop: "10px" }}>
                   Total Price: <span style={{ color: "#28a745" }}>{item.totalPrice}</span>
                 </div>
-                <button
-                  onClick={() => handleDeliver(item)}
-                  style={{
-                    padding: "10px",
-                    backgroundColor: "#28a745",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "5px",
-                    cursor: "pointer",
-                    marginTop: "10px",
-                  }}
-                >
-                  Print
-                </button>
               </div>
             ))}
           </div>
