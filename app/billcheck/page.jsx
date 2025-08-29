@@ -1,20 +1,36 @@
 "use client";
-import { useEffect, useState } from 'react';
-import { db } from '../firebaseConfig'; // Adjust the import path as necessary
-import { collection, query, where, getDocs, getDoc, deleteDoc, doc, writeBatch, updateDoc, setDoc } from 'firebase/firestore';
-import '../../BillVoucher.css'; // Import the CSS file for styling
 
-export default function NextPage() {
-  const params = new URLSearchParams(window.location.search);
-  const id = params.get('id'); // Retrieve the `id` from the URL parameters
+import { useEffect, useState } from "react";
+import { db } from "../firebaseConfig"; // Adjust path
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  getDoc,
+  writeBatch,
+  doc,
+  updateDoc,
+  setDoc,
+} from "firebase/firestore";
+import "../../BillVoucher.css";
 
+export default function BillCheckPage() {
+  const [id, setId] = useState(null); 
   const [items, setItems] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
 
+  // ✅ Fetch table ID and data client-side only
   useEffect(() => {
-    if (!id) return;
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+    const tableId = params.get("id");
+    if (!tableId) return;
+
+    setId(tableId);
 
     const fetchData = async () => {
       try {
@@ -22,9 +38,9 @@ export default function NextPage() {
         const deliveredRef = collection(db, "1", "delivered", "items");
         const billingRef = collection(db, "1", "billing", "items");
 
-        const orderQuery = query(orderRef, where("table", "==", id));
-        const deliveredQuery = query(deliveredRef, where("table", "==", id));
-        const billingQuery = query(billingRef, where("table", "==", id));
+        const orderQuery = query(orderRef, where("table", "==", tableId));
+        const deliveredQuery = query(deliveredRef, where("table", "==", tableId));
+        const billingQuery = query(billingRef, where("table", "==", tableId));
 
         const [orderSnapshot, deliveredSnapshot, billingSnapshot] = await Promise.all([
           getDocs(orderQuery),
@@ -36,12 +52,12 @@ export default function NextPage() {
         let combinedTotalPrice = 0;
 
         const processSnapshot = (snapshot) => {
-          snapshot.forEach(doc => {
+          snapshot.forEach((doc) => {
             const data = doc.data();
             if (data.orderlist && Array.isArray(data.orderlist)) {
-              data.orderlist.forEach(orderItem => {
+              data.orderlist.forEach((orderItem) => {
                 combinedItems.push(orderItem);
-                combinedTotalPrice += orderItem.price || 0; // Sum the prices of all items
+                combinedTotalPrice += orderItem.price || 0;
               });
             }
           });
@@ -53,16 +69,17 @@ export default function NextPage() {
 
         setItems(combinedItems);
         setTotalPrice(combinedTotalPrice);
-
       } catch (error) {
         console.error("Error fetching data: ", error);
       }
     };
 
     fetchData();
-  }, [id]);
+  }, []);
 
+  // ✅ Print and save to Firestore
   const handlePrint = async () => {
+    if (!id) return;
     window.print();
     setLoading(true);
 
@@ -85,9 +102,7 @@ export default function NextPage() {
       ]);
 
       const processSnapshotForDeletion = (snapshot) => {
-        snapshot.forEach(doc => {
-          batch.delete(doc.ref);
-        });
+        snapshot.forEach((doc) => batch.delete(doc.ref));
       };
 
       processSnapshotForDeletion(orderSnapshot);
@@ -96,19 +111,17 @@ export default function NextPage() {
 
       await batch.commit();
 
-      console.log("Data deleted successfully");
-
       const today = new Date();
-      const formattedDate = today.toLocaleDateString('en-US', {
-        month: '2-digit',
-        day: '2-digit',
-        year: 'numeric'
+      const formattedDate = today.toLocaleDateString("en-US", {
+        month: "2-digit",
+        day: "2-digit",
+        year: "numeric",
       });
 
       const dailyDocRef = doc(dailyRef);
       await setDoc(dailyDocRef, {
         createdAt: formattedDate,
-        orderlist: items.map(item => ({
+        orderlist: items.map((item) => ({
           id: item.id,
           name: item.name,
           price: item.price,
@@ -118,10 +131,7 @@ export default function NextPage() {
         totalPrice: totalPrice,
       });
 
-      console.log("Data inserted into daily items collection");
-
       await updateItemCounts();
-
     } catch (error) {
       console.error("Error handling print: ", error);
     } finally {
@@ -130,6 +140,7 @@ export default function NextPage() {
     }
   };
 
+  // ✅ Update item counts in Firestore
   const updateItemCounts = async () => {
     try {
       for (let i = 0; i < items.length; i++) {
@@ -137,38 +148,31 @@ export default function NextPage() {
         const itemRef = doc(db, "1", "products", "items", item.id);
 
         const itemSnap = await getDoc(itemRef);
-
         if (itemSnap.exists()) {
           const currentCount = itemSnap.data().count;
-
-          await updateDoc(itemRef, {
-            count: currentCount + item.quantity
-          });
+          await updateDoc(itemRef, { count: currentCount + item.quantity });
         }
 
         setProgress(((i + 1) / items.length) * 100);
       }
-
-      console.log("Item counts updated successfully");
     } catch (error) {
       console.error("Error updating item counts: ", error);
     }
   };
 
   return (
-    <div className="bill-voucher"
+    <div
+      className="bill-voucher"
       style={{
-        border: "2px dashed #ccc", 
+        border: "2px dashed #ccc",
         borderRadius: "10px",
         padding: "20px",
         backgroundColor: "#fefefe",
         boxShadow: "0 6px 12px rgba(0, 0, 0, 0.1)",
-        marginBottom: "20px",
+        margin: "20px auto",
         maxWidth: "30%",
-        margin: "auto",
-        marginTop: "20px",
-        fontFamily: "'Courier New', Courier, monospace", 
-        backgroundImage: "url('https://www.transparenttextures.com/patterns/paper-fibers.png')", 
+        fontFamily: "'Courier New', Courier, monospace",
+        backgroundImage: "url('https://www.transparenttextures.com/patterns/paper-fibers.png')",
       }}
     >
       {loading && (
@@ -178,14 +182,17 @@ export default function NextPage() {
           </div>
         </div>
       )}
+
       <div className="bill-header">
         <h2>H2 Restaurant</h2>
       </div>
+
       <div className="bill-info">
         <p><strong>Table:</strong> {id}</p>
         <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
         <p><strong>Time:</strong> {new Date().toLocaleTimeString()}</p>
       </div>
+
       <div className="bill-items">
         <ul>
           {items.map((item, index) => (
@@ -197,10 +204,14 @@ export default function NextPage() {
           ))}
         </ul>
       </div>
+
       <div className="bill-total">
         <p>Total: <strong>{totalPrice.toFixed(2)} kyats</strong></p>
       </div>
-      <button className="print-button" onClick={handlePrint} disabled={loading}>Print</button>
+
+      <button className="print-button" onClick={handlePrint} disabled={loading}>
+        Print
+      </button>
 
       <style jsx>{`
         .loading-overlay {
@@ -209,7 +220,7 @@ export default function NextPage() {
           left: 0;
           width: 100%;
           height: 100%;
-          background: rgba(0, 0, 0, 0.5);
+          background: rgba(0,0,0,0.5);
           display: flex;
           justify-content: center;
           align-items: center;
@@ -226,10 +237,10 @@ export default function NextPage() {
         .print-button {
           margin-top: 20px;
           padding: 10px;
-          background-color: ${loading ? '#ccc' : '#4caf50'};
+          background-color: ${loading ? "#ccc" : "#4caf50"};
           color: white;
           border: none;
-          cursor: ${loading ? 'not-allowed' : 'pointer'};
+          cursor: ${loading ? "not-allowed" : "pointer"};
         }
       `}</style>
     </div>
